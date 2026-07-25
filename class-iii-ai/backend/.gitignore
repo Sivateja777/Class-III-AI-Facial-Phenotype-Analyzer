@@ -1,0 +1,7 @@
+__pycache__/
+venv/
+*.pkl
+static/heatmaps/*
+!static/heatmaps/.gitkeep
+static/reports/*
+!static/reports/.gitkeep

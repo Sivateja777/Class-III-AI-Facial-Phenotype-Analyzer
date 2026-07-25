@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/backgroundColor">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_header_gradient"
+            android:padding="24dp"
+            android:orientation="vertical">
+            
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_revert"
+                android:layout_marginBottom="16dp"
+                app:tint="@color/white"
+                xmlns:app="http://schemas.android.com/apk/res-auto" />
+                
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Book Appointment"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/white" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Consult an orthodontist regarding Class III correction"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:alpha="0.9" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Patient Details"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/primaryTextColor"
+                android:layout_marginBottom="16dp" />
+
+            <EditText
+                android:id="@+id/etPatientName"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Full Name"
+                android:padding="12dp"
+                android:background="@drawable/bg_card_rounded"
+                android:textColor="@color/primaryTextColor"
+                android:textColorHint="@color/secondaryTextColor"
+                android:layout_marginBottom="12dp" />
+
+            <EditText
+                android:id="@+id/etPatientAge"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Age"
+                android:inputType="number"
+                android:padding="12dp"
+                android:background="@drawable/bg_card_rounded"
+                android:textColor="@color/primaryTextColor"
+                android:textColorHint="@color/secondaryTextColor"
+                android:layout_marginBottom="24dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clinical Information"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/primaryTextColor"
+                android:layout_marginBottom="16dp" />
+
+            <EditText
+                android:id="@+id/etChiefComplaint"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:hint="Chief Complaint (e.g., Underbite, jaw pain, chewing difficulty)"
+                android:gravity="top|start"
+                android:padding="12dp"
+                android:background="@drawable/bg_card_rounded"
+                android:textColor="@color/primaryTextColor"
+                android:textColorHint="@color/secondaryTextColor"
+                android:layout_marginBottom="12dp" />
+
+            <EditText
+                android:id="@+id/etClinicalHistory"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:hint="Past clinical history, previous treatments, or family history of Class III malocclusion"
+                android:gravity="top|start"
+                android:padding="12dp"
+                android:background="@drawable/bg_card_rounded"
+                android:textColor="@color/primaryTextColor"
+                android:textColorHint="@color/secondaryTextColor"
+                android:layout_marginBottom="24dp" />
+                
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select Doctor"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/primaryTextColor"
+                android:layout_marginBottom="16dp" />
+                
+            <Spinner
+                android:id="@+id/spinnerDoctors"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_card_rounded"
+                android:layout_marginBottom="32dp" />
+
+            <Button
+                android:id="@+id/btnSubmitRequest"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Submit Appointment Request"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/blueColor"
+                android:padding="16dp" />
+                
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

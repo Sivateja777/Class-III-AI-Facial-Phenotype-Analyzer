@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Class III AI Facial Phenotype Analyzer</string>
+    <string name="default_web_client_id">89141093319-4ubvagcvmajitis95ch87galpempchrk.apps.googleusercontent.com</string>
+    <string name="welcome_message">Welcome to Class III AI</string>
+    <string name="consent_title">Data Privacy Consent</string>
+    <string name="consent_text">By using this app, you agree to our data processing terms.</string>
+    <string name="accept_btn">Accept</string>
+</resources>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_patient_home"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="Home" />
+
+    <item
+        android:id="@+id/nav_patient_reports"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Reports" />
+    <item
+        android:id="@+id/nav_patient_visits"
+        android:icon="@android:drawable/ic_menu_today"
+        android:title="Visits" />
+    <item
+        android:id="@+id/nav_patient_simulation"
+        android:icon="@android:drawable/ic_menu_camera"
+        android:title="Simulator" />
+    <item
+        android:id="@+id/nav_patient_profile"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="Profile" />
+</menu>

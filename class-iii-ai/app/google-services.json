@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "89141093319",
+    "firebase_url": "https://facial-phenotype-analyze-128d5-default-rtdb.firebaseio.com",
+    "project_id": "facial-phenotype-analyze-128d5",
+    "storage_bucket": "facial-phenotype-analyze-128d5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89141093319:android:faca6d14c8b6cb4384efe2",
+        "android_client_info": {
+          "package_name": "com.classiiiai.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "89141093319-0uh5kstgfvokoevtdeim68srrv1ne9p6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.classiiiai.app",
+            "certificate_hash": "a5ac330f77bc1b5232be941c4c4859925f314582"
+          }
+        },
+        {
+          "client_id": "89141093319-4ubvagcvmajitis95ch87galpempchrk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAi1lYDAEFG0VqSSL5GdHArTOw7NIWw2r0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "89141093319-4ubvagcvmajitis95ch87galpempchrk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

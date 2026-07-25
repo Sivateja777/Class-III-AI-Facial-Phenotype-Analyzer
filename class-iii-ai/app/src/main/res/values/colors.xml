@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Clinical Blue Palette -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="greenColor">#10b981</color>
+    <color name="primaryColor">#16834a</color>
+    <color name="primaryColorDark">#0d5f35</color>
+    <color name="secondaryColor">#2563eb</color>
+    <color name="colorAccent">#3b82f6</color>
+    <color name="backgroundColor">#eef5f1</color>
+    <color name="cardColor">#ffffff</color>
+    <color name="primaryTextColor">#111827</color>
+    <color name="secondaryTextColor">#6b7280</color>
+    <color name="borderColor">#e5e7eb</color>
+    <color name="blueColor">#2563eb</color>
+    <color name="errorColor">#ef4444</color>
+    <color name="successColor">#16834a</color>
+    
+    <!-- Gradients -->
+    <color name="gradientStart">#0F172A</color>
+    <color name="gradientEnd">#1E293B</color>
+</resources>

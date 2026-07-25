@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bg_card_rounded">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Book Appointment"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/primaryTextColor"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Name -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Patient Name"
+        android:textSize="12sp"
+        android:textColor="@color/secondaryTextColor" />
+    <EditText
+        android:id="@+id/etApptName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textColor="@color/primaryTextColor"
+        android:background="@android:color/transparent"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:hint="John Doe"
+        android:inputType="textPersonName" />
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/borderColor" android:layout_marginBottom="16dp" />
+
+    <!-- Age -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Age"
+        android:textSize="12sp"
+        android:textColor="@color/secondaryTextColor" />
+    <EditText
+        android:id="@+id/etApptAge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textColor="@color/primaryTextColor"
+        android:background="@android:color/transparent"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:hint="e.g. 25"
+        android:inputType="number" />
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/borderColor" android:layout_marginBottom="16dp" />
+
+    <!-- Problem -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Primary Problem / Concern"
+        android:textSize="12sp"
+        android:textColor="@color/secondaryTextColor" />
+    <EditText
+        android:id="@+id/etApptProblem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textColor="@color/primaryTextColor"
+        android:background="@android:color/transparent"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:hint="Underbite, jaw pain, etc."
+        android:inputType="text" />
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/borderColor" android:layout_marginBottom="16dp" />
+
+    <!-- Clinical History -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Brief Clinical History"
+        android:textSize="12sp"
+        android:textColor="@color/secondaryTextColor" />
+    <EditText
+        android:id="@+id/etApptHistory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textColor="@color/primaryTextColor"
+        android:background="@android:color/transparent"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:hint="Previous braces? Surgeries?"
+        android:inputType="textMultiLine"
+        android:minLines="2" />
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/borderColor" android:layout_marginBottom="24dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/btnCancelAppt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            style="?android:attr/borderlessButtonStyle"
+            android:textColor="@color/secondaryTextColor" />
+
+        <Button
+            android:id="@+id/btnSelectDateAppt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Date"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/blueColor"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+</LinearLayout>

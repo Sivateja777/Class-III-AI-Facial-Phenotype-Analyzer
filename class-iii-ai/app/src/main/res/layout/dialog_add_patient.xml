@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <EditText
+        android:id="@+id/etPatientName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Full Name"
+        android:inputType="textPersonName"
+        android:layout_marginBottom="12dp"
+        android:textColor="@color/primaryTextColor"/>
+        
+    <EditText
+        android:id="@+id/etPatientEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Patient's Login Email (Optional)"
+        android:inputType="textEmailAddress"
+        android:layout_marginBottom="12dp"
+        android:textColor="@color/primaryTextColor"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+        <EditText
+            android:id="@+id/etPatientAge"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Age"
+            android:inputType="number"
+            android:layout_marginEnd="8dp"
+            android:textColor="@color/primaryTextColor"/>
+        <EditText
+            android:id="@+id/etPatientGender"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Gender"
+            android:inputType="text"
+            android:textColor="@color/primaryTextColor"/>
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/etPatientEthnicity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ethnicity"
+        android:inputType="text"
+        android:layout_marginBottom="12dp"
+        android:textColor="@color/primaryTextColor"/>
+
+    <EditText
+        android:id="@+id/etGrowthStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Growth Status (e.g. Pre-pubertal)"
+        android:inputType="text"
+        android:layout_marginBottom="12dp"
+        android:textColor="@color/primaryTextColor"/>
+
+    <EditText
+        android:id="@+id/etClinicalNotes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Clinical Notes"
+        android:inputType="textMultiLine"
+        android:lines="3"
+        android:layout_marginBottom="12dp"
+        android:textColor="@color/primaryTextColor"/>
+
+    <EditText
+        android:id="@+id/etCephValues"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Cephalometric Values (Optional)"
+        android:inputType="textMultiLine"
+        android:lines="2"
+        android:textColor="@color/primaryTextColor"/>
+
+</LinearLayout>
