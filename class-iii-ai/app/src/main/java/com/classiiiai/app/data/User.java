@@ -19,6 +19,7 @@ public class User {
     public String phoneNumber;
     public String dateOfBirth;
     public String clinicName;
+    public String medicalLicenseNumber;
 
     public User(@NonNull String email, String displayName, String profilePictureUrl, String role, long loginTimestamp) {
         this.email = email;
@@ -30,5 +31,6 @@ public class User {
         this.phoneNumber = "";
         this.dateOfBirth = "";
         this.clinicName = "";
+        this.medicalLicenseNumber = "";
     }
 }

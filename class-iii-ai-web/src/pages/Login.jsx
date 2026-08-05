@@ -14,7 +14,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const saveToDatabase = async (user, displayName, role) => {
+  const saveToDatabase = async (user, displayName, role, licenseStr) => {
     const emailKey = user.email.replace(/\./g, '_').replace(/@/g, '_');
     const userRef = doc(db, 'users', emailKey);
     const userSnap = await getDoc(userRef);
@@ -24,6 +24,7 @@ const Login = () => {
         email: user.email,
         displayName: displayName || user.displayName || 'Unknown User',
         role: role,
+        medicalLicenseNumber: licenseStr || '',
         timestamp: Date.now(),
         profilePic: user.photoURL || ''
       });
@@ -50,10 +51,10 @@ const Login = () => {
     try {
       if (isRegistering) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await saveToDatabase(userCredential.user, name, isDoctor ? 'doctor' : 'patient');
+        await saveToDatabase(userCredential.user, name, isDoctor ? 'doctor' : 'patient', isDoctor ? license : '');
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        await saveToDatabase(userCredential.user, name, isDoctor ? 'doctor' : 'patient');
+        await saveToDatabase(userCredential.user, name, isDoctor ? 'doctor' : 'patient', isDoctor ? license : '');
       }
     } catch (err) {
       console.error("Login Error:", err);
@@ -87,7 +88,7 @@ const Login = () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      await saveToDatabase(result.user, result.user.displayName, isDoctor ? 'doctor' : 'patient');
+      await saveToDatabase(result.user, result.user.displayName, isDoctor ? 'doctor' : 'patient', '');
     } catch (err) {
       console.error("Google Auth Error:", err);
       let errorMsg = "An unexpected error occurred during Google Sign-In.";

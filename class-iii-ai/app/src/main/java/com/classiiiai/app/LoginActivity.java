@@ -144,7 +144,8 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this, task -> {
                 if (task.isSuccessful()) {
-                    saveToDatabase(email, username, "", selectedRole, "");
+                    String license = "doctor".equals(selectedRole) && etLicense.getText() != null ? etLicense.getText().toString().trim() : "";
+                    saveToDatabase(email, username, "", selectedRole, license);
                 } else {
                     pbLoading.setVisibility(View.GONE);
                     btnSignIn.setEnabled(true);
@@ -189,7 +190,8 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this, task -> {
                 if (task.isSuccessful()) {
-                    saveToDatabase(email, username, "", selectedRole, "");
+                    String license = "doctor".equals(selectedRole) && etLicense.getText() != null ? etLicense.getText().toString().trim() : "";
+                    saveToDatabase(email, username, "", selectedRole, license);
                 } else {
                     pbLoading.setVisibility(View.GONE);
                     btnSignIn.setEnabled(true);
@@ -277,7 +279,8 @@ public class LoginActivity extends AppCompatActivity {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 if (account != null) {
                     String profilePic = account.getPhotoUrl() != null ? account.getPhotoUrl().toString() : "";
-                    saveToDatabase(account.getEmail(), account.getDisplayName(), profilePic, selectedRole, "");
+                    String license = "doctor".equals(selectedRole) && etLicense.getText() != null ? etLicense.getText().toString().trim() : "";
+                    saveToDatabase(account.getEmail(), account.getDisplayName(), profilePic, selectedRole, license);
                 }
             } catch (ApiException e) {
                 Toast.makeText(this, "Fallback Sign In Failed: " + e.getStatusCode(), Toast.LENGTH_LONG).show();
@@ -298,7 +301,8 @@ public class LoginActivity extends AppCompatActivity {
                     String displayName = googleIdTokenCredential.getDisplayName();
                     String profilePictureUri = googleIdTokenCredential.getProfilePictureUri() != null ? googleIdTokenCredential.getProfilePictureUri().toString() : "";
                     
-                    saveToDatabase(email, displayName, profilePictureUri, selectedRole, "");
+                    String license = "doctor".equals(selectedRole) && etLicense.getText() != null ? etLicense.getText().toString().trim() : "";
+                    saveToDatabase(email, displayName, profilePictureUri, selectedRole, license);
                 }
             }
         } catch (Exception e) {
@@ -311,21 +315,29 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private void saveToDatabase(String email, String name, String profilePic, String role, String mobile) {
+    private void saveToDatabase(String email, String name, String profilePic, String role, String license) {
         executor.execute(() -> {
             com.classiiiai.app.data.AppDatabase db = com.classiiiai.app.data.AppDatabase.getDatabase(this);
             com.classiiiai.app.data.User user = new com.classiiiai.app.data.User(email, name, profilePic, role, System.currentTimeMillis());
-            if (!mobile.isEmpty()) {
-                user.phoneNumber = mobile;
+            if (!license.isEmpty()) {
+                user.medicalLicenseNumber = license;
             }
             db.userDao().insertUser(user);
             
             String emailKey = email.replace(".", "_").replace("@", "_");
-            com.classiiiai.app.network.FirebaseApiService api = com.classiiiai.app.network.FirebaseClient.getClient().create(com.classiiiai.app.network.FirebaseApiService.class);
             
-            api.saveUser(emailKey, user).enqueue(new retrofit2.Callback<com.classiiiai.app.data.User>() {
-                @Override
-                public void onResponse(retrofit2.Call<com.classiiiai.app.data.User> call, retrofit2.Response<com.classiiiai.app.data.User> response) {
+            // Sync user to Firestore so it bridges perfectly with the Web App
+            java.util.Map<String, Object> userData = new java.util.HashMap<>();
+            userData.put("email", user.email);
+            userData.put("displayName", user.displayName);
+            userData.put("role", user.role);
+            userData.put("medicalLicenseNumber", license);
+            userData.put("timestamp", user.loginTimestamp);
+            userData.put("profilePic", user.profilePictureUrl);
+            
+            mFirestore.collection("users").document(emailKey)
+                .set(userData)
+                .addOnSuccessListener(aVoid -> {
                     runOnUiThread(() -> {
                         pbLoading.setVisibility(View.GONE);
                         Toast.makeText(LoginActivity.this, "Welcome " + name, Toast.LENGTH_SHORT).show();
@@ -333,19 +345,16 @@ public class LoginActivity extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                     });
-                }
-
-                @Override
-                public void onFailure(retrofit2.Call<com.classiiiai.app.data.User> call, Throwable t) {
+                })
+                .addOnFailureListener(e -> {
                     runOnUiThread(() -> {
                         pbLoading.setVisibility(View.GONE);
-                        Toast.makeText(LoginActivity.this, "Welcome " + name + " (Offline)", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this, "Welcome " + name + " (Offline Mode)", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(intent);
                         finish();
                     });
-                }
-            });
+                });
         });
     }
 }
