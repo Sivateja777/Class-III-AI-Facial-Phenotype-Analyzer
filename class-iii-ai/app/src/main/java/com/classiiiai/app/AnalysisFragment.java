@@ -371,18 +371,20 @@ public class AnalysisFragment extends Fragment {
             AnalysisReport report = new AnalysisReport(selectedPatientName, targetPatientEmail, frontalUri.toString(), diagnosis, severityScore, heatmapUrl, reportUrl, System.currentTimeMillis());
             db.analysisReportDao().insert(report);
             
-            // Firebase save
-            com.classiiiai.app.network.FirebaseApiService api = com.classiiiai.app.network.FirebaseClient.getClient().create(com.classiiiai.app.network.FirebaseApiService.class);
-            api.saveReport(report).enqueue(new retrofit2.Callback<java.util.Map<String, String>>() {
-                @Override
-                public void onResponse(retrofit2.Call<java.util.Map<String, String>> call, retrofit2.Response<java.util.Map<String, String>> response) {
-                    // Handled silently
-                }
-                @Override
-                public void onFailure(retrofit2.Call<java.util.Map<String, String>> call, Throwable t) {
-                    // Handled silently
-                }
-            });
+            // Firebase Firestore sync for Web App parity
+            com.google.firebase.firestore.FirebaseFirestore dbFirestore = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+            java.util.Map<String, Object> firestoreReport = new java.util.HashMap<>();
+            firestoreReport.put("patientId", targetPatientEmail);
+            firestoreReport.put("patientName", selectedPatientName);
+            firestoreReport.put("diagnosis", diagnosis);
+            firestoreReport.put("severityScore", severityScore);
+            firestoreReport.put("timestamp", System.currentTimeMillis());
+            if (heatmapUrl != null) firestoreReport.put("heatmapUrl", heatmapUrl);
+            if (reportUrl != null) firestoreReport.put("reportUrl", reportUrl);
+
+            dbFirestore.collection("analysis_reports").add(firestoreReport)
+                .addOnSuccessListener(documentReference -> android.util.Log.d("Sync", "Successfully synced to Firestore for Web App"))
+                .addOnFailureListener(e -> android.util.Log.e("Sync", "Failed to sync to Firestore: ", e));
         }
         
         String finalPatientName = selectedPatientName;

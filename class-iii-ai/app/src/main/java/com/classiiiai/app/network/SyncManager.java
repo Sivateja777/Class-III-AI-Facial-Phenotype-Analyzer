@@ -4,50 +4,63 @@ import android.content.Context;
 import android.util.Log;
 import com.classiiiai.app.data.AnalysisReport;
 import com.classiiiai.app.data.AppDatabase;
-import java.util.Map;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.concurrent.Executors;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class SyncManager {
     private static final String TAG = "SyncManager";
 
     public static void syncReportsFromFirebase(Context context) {
-        FirebaseApiService apiService = FirebaseClient.getClient().create(FirebaseApiService.class);
+        FirebaseFirestore dbFirestore = FirebaseFirestore.getInstance();
         
-        apiService.getAllReports().enqueue(new Callback<Map<String, AnalysisReport>>() {
-            @Override
-            public void onResponse(Call<Map<String, AnalysisReport>> call, Response<Map<String, AnalysisReport>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    Map<String, AnalysisReport> firebaseReports = response.body();
-                    
+        dbFirestore.collection("analysis_reports")
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
                     Executors.newSingleThreadExecutor().execute(() -> {
                         AppDatabase db = AppDatabase.getDatabase(context);
-                        for (Map.Entry<String, AnalysisReport> entry : firebaseReports.entrySet()) {
+                        
+                        // Clear existing to avoid duplicates, as we will fully sync from Web source of truth
+                        db.analysisReportDao().deleteAll();
+                        
+                        int count = 0;
+                        for (QueryDocumentSnapshot document : task.getResult()) {
                             try {
-                                AnalysisReport report = entry.getValue();
-                                if (report != null) {
-                                    // Firebase keys usually act as IDs, but our local DB autogenerates ID.
-                                    // We should technically check if it already exists by some unique field, 
-                                    // but for this demo, we'll just insert if the local DB is empty or insert new.
-                                    // Simplest robust approach: Clear all and insert fresh, or just insert new ones.
+                                String patientName = document.getString("patientName");
+                                String patientId = document.getString("patientId"); // acts as email
+                                String diagnosis = document.getString("diagnosis");
+                                Double severityObj = document.getDouble("severityScore");
+                                double severityScore = severityObj != null ? severityObj : 0.0;
+                                String heatmapUrl = document.getString("heatmapUrl");
+                                String reportUrl = document.getString("reportUrl");
+                                
+                                Long timestampObj = document.getLong("timestamp");
+                                long timestamp = timestampObj != null ? timestampObj : System.currentTimeMillis();
+
+                                if (patientName != null && diagnosis != null) {
+                                    AnalysisReport report = new AnalysisReport(
+                                        patientName, 
+                                        patientId != null ? patientId : "", 
+                                        "", // frontalImageUrl
+                                        diagnosis, 
+                                        severityScore, 
+                                        heatmapUrl != null ? heatmapUrl : "", 
+                                        reportUrl != null ? reportUrl : "", 
+                                        timestamp
+                                    );
                                     db.analysisReportDao().insert(report);
+                                    count++;
                                 }
                             } catch (Exception e) {
-                                Log.e(TAG, "Error syncing individual report to Room: " + e.getMessage());
+                                Log.e(TAG, "Error syncing web report to Room: " + e.getMessage());
                             }
                         }
-                        Log.d(TAG, "Successfully synced " + firebaseReports.size() + " reports to local database.");
+                        Log.d(TAG, "Successfully synced " + count + " web reports to local Android database.");
                     });
+                } else {
+                    Log.e(TAG, "Firebase sync failed: ", task.getException());
                 }
-            }
-
-            @Override
-            public void onFailure(Call<Map<String, AnalysisReport>> call, Throwable t) {
-                Log.e(TAG, "Firebase sync failed: " + t.getMessage());
-                // Silently fail. The UI will just show whatever is currently in the local DB.
-            }
-        });
+            });
     }
 }

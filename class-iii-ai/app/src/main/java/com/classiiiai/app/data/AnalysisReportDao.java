@@ -22,4 +22,7 @@ public interface AnalysisReportDao {
     
     @Query("SELECT * FROM analysis_reports")
     List<AnalysisReport> getAllReports();
+    
+    @Query("DELETE FROM analysis_reports")
+    void deleteAll();
 }
