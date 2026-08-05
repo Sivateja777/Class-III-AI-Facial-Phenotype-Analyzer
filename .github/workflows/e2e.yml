@@ -10,14 +10,18 @@ jobs:
     name: 🌐 Selenium — Website Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Run Web UI Tests
         run: echo "Running Selenium WebDriver tests for React frontend... All 45 tests passed."
       - name: Generate Excel
         run: |
           pip install pandas openpyxl
           python -c "import pandas as pd; pd.DataFrame([{'Test ID': f'TC-{i}', 'Status': 'PASSED'} for i in range(1, 301)]).to_excel('Selenium_Report.xlsx', index=False)"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Selenium_Report
           path: Selenium_Report.xlsx
@@ -26,14 +30,18 @@ jobs:
     name: 📱 Appium — Android Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Run Android UI Tests
         run: echo "Running Appium tests for Native Android App... All 62 tests passed."
       - name: Generate Excel
         run: |
           pip install pandas openpyxl
           python -c "import pandas as pd; pd.DataFrame([{'Test ID': f'TC-{i}', 'Status': 'PASSED'} for i in range(1, 301)]).to_excel('Appium_Report.xlsx', index=False)"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Appium_Report
           path: Appium_Report.xlsx
@@ -42,14 +50,18 @@ jobs:
     name: 🧪 Unit Tests — API (300)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Execute API Unit Tests
         run: echo "Testing FastAPI endpoints and MediaPipe integration... 300 tests passed."
       - name: Generate Excel
         run: |
           pip install pandas openpyxl
           python -c "import pandas as pd; pd.DataFrame([{'Test ID': f'TC-{i}', 'Status': 'PASSED'} for i in range(1, 301)]).to_excel('API_Unit_Tests.xlsx', index=False)"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: API_Unit_Tests_Report
           path: API_Unit_Tests.xlsx
@@ -58,14 +70,18 @@ jobs:
     name: ✅ Validation Tests (300)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Run Data Validation
         run: echo "Validating AI severity indexing and JSON schemas... 300 tests passed."
       - name: Generate Excel
         run: |
           pip install pandas openpyxl
           python -c "import pandas as pd; pd.DataFrame([{'Test ID': f'TC-{i}', 'Status': 'PASSED'} for i in range(1, 301)]).to_excel('Validation_Tests.xlsx', index=False)"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Validation_Tests_Report
           path: Validation_Tests.xlsx
@@ -74,14 +90,18 @@ jobs:
     name: 🚀 Deployment Status (300)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Check Cloud Run Status
         run: echo "Verifying backend cloud deployment readiness... 300 checks passed."
       - name: Generate Excel
         run: |
           pip install pandas openpyxl
           python -c "import pandas as pd; pd.DataFrame([{'Test ID': f'TC-{i}', 'Status': 'PASSED'} for i in range(1, 301)]).to_excel('Deployment_Status.xlsx', index=False)"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Deployment_Status_Report
           path: Deployment_Status.xlsx
@@ -90,14 +110,18 @@ jobs:
     name: 📈 Load Testing — Performance (300)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Simulate 10k Users
         run: echo "Stress testing the API with 10,000 concurrent image uploads... Zero latency spikes. 300 checks passed."
       - name: Generate Excel
         run: |
           pip install pandas openpyxl
           python -c "import pandas as pd; pd.DataFrame([{'Test ID': f'TC-{i}', 'Status': 'PASSED'} for i in range(1, 301)]).to_excel('Load_Testing.xlsx', index=False)"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Load_Testing_Report
           path: Load_Testing.xlsx
@@ -107,14 +131,18 @@ jobs:
     needs: [selenium_tests, appium_tests, unit_tests, validation_tests, deployment_status, load_testing]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Generate QA Report
         run: echo "Compiling QA_Test_Report.xlsx from all nodes... Success! Pipeline Complete."
       - name: Generate Excel
         run: |
           pip install pandas openpyxl
           python -c "import pandas as pd; pd.DataFrame([{'Test ID': f'TC-{i}', 'Status': 'PASSED'} for i in range(1, 301)]).to_excel('Master_QA_Report.xlsx', index=False)"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Master_QA_Test_Report
           path: Master_QA_Report.xlsx
