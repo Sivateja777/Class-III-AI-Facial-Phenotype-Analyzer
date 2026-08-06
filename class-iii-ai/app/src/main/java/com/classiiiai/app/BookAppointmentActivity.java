@@ -56,32 +56,50 @@ public class BookAppointmentActivity extends AppCompatActivity {
         Executors.newSingleThreadExecutor().execute(() -> {
             currentUser = db.userDao().getLastLoggedInUser();
             
-            // Get all doctors
-            List<User> allUsers = db.userDao().getAllUsers();
-            doctorsList = new ArrayList<>();
-            List<String> doctorNames = new ArrayList<>();
-            
-            for (User u : allUsers) {
-                if ("doctor".equals(u.role)) {
-                    doctorsList.add(u);
-                    doctorNames.add("Dr. " + u.displayName);
-                }
-            }
+            // Get doctors from Firestore to ensure we see doctors created on the Web App
+            com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("users")
+                .whereEqualTo("role", "doctor")
+                .get()
+                .addOnCompleteListener(task -> {
+                    doctorsList = new ArrayList<>();
+                    List<String> doctorNames = new ArrayList<>();
+                    
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        for (com.google.firebase.firestore.DocumentSnapshot doc : task.getResult().getDocuments()) {
+                            String email = doc.getString("email");
+                            String displayName = doc.getString("displayName");
+                            if (email != null && displayName != null) {
+                                User d = new User(email, displayName, "", "doctor", 0);
+                                doctorsList.add(d);
+                                doctorNames.add("Dr. " + displayName);
+                            }
+                        }
+                    } else {
+                        // Fallback to local
+                        List<User> allUsers = db.userDao().getAllUsers();
+                        for (User u : allUsers) {
+                            if ("doctor".equals(u.role)) {
+                                doctorsList.add(u);
+                                doctorNames.add("Dr. " + u.displayName);
+                            }
+                        }
+                    }
 
-            runOnUiThread(() -> {
-                if (currentUser != null && currentUser.displayName != null) {
-                    etPatientName.setText(currentUser.displayName);
-                }
-                
-                if (doctorNames.isEmpty()) {
-                    doctorNames.add("No doctors available");
-                    findViewById(R.id.btnSubmitRequest).setEnabled(false);
-                }
-                
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, doctorNames);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                spinnerDoctors.setAdapter(adapter);
-            });
+                    runOnUiThread(() -> {
+                        if (currentUser != null && currentUser.displayName != null) {
+                            etPatientName.setText(currentUser.displayName);
+                        }
+                        
+                        if (doctorNames.isEmpty()) {
+                            doctorNames.add("No doctors available");
+                            findViewById(R.id.btnSubmitRequest).setEnabled(false);
+                        }
+                        
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, doctorNames);
+                        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                        spinnerDoctors.setAdapter(adapter);
+                    });
+                });
         });
     }
 
@@ -118,10 +136,30 @@ public class BookAppointmentActivity extends AppCompatActivity {
             );
             db.appointmentDao().insert(appt);
 
-            runOnUiThread(() -> {
-                Toast.makeText(BookAppointmentActivity.this, "Appointment Requested Successfully!", Toast.LENGTH_LONG).show();
-                finish();
-            });
+            // Sync to Firestore
+            java.util.Map<String, Object> apptData = new java.util.HashMap<>();
+            apptData.put("patientName", name);
+            apptData.put("patientEmail", patientEmail);
+            apptData.put("age", age);
+            apptData.put("doctorEmail", selectedDoctor.email);
+            apptData.put("date", currentDate);
+            apptData.put("status", "Pending");
+            apptData.put("chiefComplaint", complaint);
+            apptData.put("clinicalHistory", history);
+            
+            com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("appointments").add(apptData)
+                .addOnSuccessListener(docRef -> {
+                    runOnUiThread(() -> {
+                        Toast.makeText(BookAppointmentActivity.this, "Appointment Requested Successfully!", Toast.LENGTH_LONG).show();
+                        finish();
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    runOnUiThread(() -> {
+                        Toast.makeText(BookAppointmentActivity.this, "Appointment Requested Locally (Sync Failed)", Toast.LENGTH_LONG).show();
+                        finish();
+                    });
+                });
         });
     }
 }

@@ -63,11 +63,46 @@ public class PatientsFragment extends Fragment {
             currentUser = db.userDao().getLastLoggedInUser();
             
             if (currentUser != null) {
-                List<PatientRecord> patients = db.patientRecordDao().getPatientsForDoctor(currentUser.email);
-                requireActivity().runOnUiThread(() -> {
-                    adapter.setPatients(patients);
-                    tvEmptyState.setVisibility(patients.isEmpty() ? View.VISIBLE : View.GONE);
-                });
+                // Fetch from Firestore
+                com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("patients")
+                    .whereEqualTo("doctorEmail", currentUser.email)
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            List<PatientRecord> patients = new ArrayList<>();
+                            for (com.google.firebase.firestore.DocumentSnapshot doc : task.getResult().getDocuments()) {
+                                String name = doc.getString("name");
+                                String age = doc.getString("age");
+                                String gender = doc.getString("gender");
+                                String ethnicity = doc.getString("ethnicity");
+                                String growth = doc.getString("growthStatus");
+                                String notes = doc.getString("clinicalNotes");
+                                String ceph = doc.getString("cephValues");
+                                String pEmail = doc.getString("patientEmail");
+                                
+                                if (name != null) {
+                                    PatientRecord pr = new PatientRecord(name, age != null ? age : "", gender != null ? gender : "", ethnicity != null ? ethnicity : "", growth != null ? growth : "", notes != null ? notes : "", ceph != null ? ceph : "", currentUser.email, pEmail != null ? pEmail : "", System.currentTimeMillis());
+                                    // Hack to map Firestore doc ID if needed, but for display this is fine
+                                    patients.add(pr);
+                                }
+                            }
+                            
+                            requireActivity().runOnUiThread(() -> {
+                                adapter.setPatients(patients);
+                                tvEmptyState.setVisibility(patients.isEmpty() ? View.VISIBLE : View.GONE);
+                            });
+                            
+                        } else {
+                            // Fallback to local
+                            executor.execute(() -> {
+                                List<PatientRecord> localPatients = db.patientRecordDao().getPatientsForDoctor(currentUser.email);
+                                requireActivity().runOnUiThread(() -> {
+                                    adapter.setPatients(localPatients);
+                                    tvEmptyState.setVisibility(localPatients.isEmpty() ? View.VISIBLE : View.GONE);
+                                });
+                            });
+                        }
+                    });
             }
         });
     }
@@ -101,9 +136,34 @@ public class PatientsFragment extends Fragment {
             
             if (!name.isEmpty() && !age.isEmpty() && currentUser != null) {
                 PatientRecord newPatient = new PatientRecord(name, age, gender, ethnicity, growth, notes, ceph, currentUser.email, email, System.currentTimeMillis());
+                
+                // Save locally
                 executor.execute(() -> {
                     AppDatabase.getDatabase(requireContext()).patientRecordDao().insert(newPatient);
-                    loadPatients();
+                    
+                    // Sync to Firestore
+                    java.util.Map<String, Object> patientData = new java.util.HashMap<>();
+                    patientData.put("name", name);
+                    patientData.put("patientEmail", email);
+                    patientData.put("age", age);
+                    patientData.put("gender", gender);
+                    patientData.put("ethnicity", ethnicity);
+                    patientData.put("growthStatus", growth);
+                    patientData.put("clinicalNotes", notes);
+                    patientData.put("cephValues", ceph);
+                    patientData.put("doctorEmail", currentUser.email);
+                    patientData.put("timestamp", System.currentTimeMillis());
+                    
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("patients").add(patientData)
+                        .addOnSuccessListener(docRef -> {
+                            loadPatients();
+                        })
+                        .addOnFailureListener(e -> {
+                            requireActivity().runOnUiThread(() -> {
+                                Toast.makeText(requireContext(), "Saved locally (Sync failed)", Toast.LENGTH_SHORT).show();
+                            });
+                            loadPatients();
+                        });
                 });
             } else {
                 Toast.makeText(requireContext(), "Name and Age are required", Toast.LENGTH_SHORT).show();

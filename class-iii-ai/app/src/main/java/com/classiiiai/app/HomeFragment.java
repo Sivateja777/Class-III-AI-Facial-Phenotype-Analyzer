@@ -120,85 +120,88 @@ public class HomeFragment extends Fragment {
             User user = db.userDao().getLastLoggedInUser();
             
             if (user != null) {
-                int patientCount = db.patientRecordDao().getPatientCountForDoctor(user.email);
-                int apptCount = db.appointmentDao().getAppointmentsForUser(user.email).size();
+                com.google.firebase.firestore.FirebaseFirestore firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance();
                 
-                // Fetch from Firebase
-                com.classiiiai.app.network.FirebaseApiService api = com.classiiiai.app.network.FirebaseClient.getClient().create(com.classiiiai.app.network.FirebaseApiService.class);
-                api.getAllReports().enqueue(new retrofit2.Callback<java.util.Map<String, com.classiiiai.app.data.AnalysisReport>>() {
-                    @Override
-                    public void onResponse(retrofit2.Call<java.util.Map<String, com.classiiiai.app.data.AnalysisReport>> call, retrofit2.Response<java.util.Map<String, com.classiiiai.app.data.AnalysisReport>> response) {
-                        java.util.List<com.classiiiai.app.data.AnalysisReport> reports = new ArrayList<>();
-                        if (response.isSuccessful() && response.body() != null) {
-                            for (com.classiiiai.app.data.AnalysisReport r : response.body().values()) {
-                                if ("doctor".equals(user.role) || user.email.equals(r.patientEmail)) {
-                                    reports.add(r);
-                                }
-                            }
+                // Fetch patients from Firestore
+                firestore.collection("patients")
+                    .whereEqualTo("doctorEmail", user.email)
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        int patientCount = (task.isSuccessful() && task.getResult() != null) ? task.getResult().size() : db.patientRecordDao().getPatientCountForDoctor(user.email);
+                        
+                        // Fetch appointments from Firestore
+                        com.google.firebase.firestore.Query apptQuery = firestore.collection("appointments");
+                        if ("patient".equals(user.role)) {
+                            apptQuery = apptQuery.whereEqualTo("patientEmail", user.email);
+                        } else {
+                            apptQuery = apptQuery.whereEqualTo("doctorEmail", user.email);
                         }
                         
-                        int reportCount = reports.size();
-                        int c1 = 0, c2 = 0, c3 = 0;
-                        for (com.classiiiai.app.data.AnalysisReport r : reports) {
-                            if (r.diagnosis != null) {
-                                if (r.diagnosis.contains("Class I")) c1++;
-                                else if (r.diagnosis.contains("Class II")) c2++;
-                                else if (r.diagnosis.contains("Class III")) c3++;
-                            }
-                        }
-                        
-                        final int finalC1 = c1, finalC2 = c2, finalC3 = c3;
-                        
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> {
-                                tvStatPatients.setText(String.valueOf(patientCount));
-                                tvStatReports.setText(String.valueOf(reportCount));
-                                tvStatAppointments.setText(String.valueOf(apptCount));
+                        apptQuery.get().addOnCompleteListener(apptTask -> {
+                                int apptCount = (apptTask.isSuccessful() && apptTask.getResult() != null) ? apptTask.getResult().size() : db.appointmentDao().getAppointmentsForUser(user.email).size();
                                 
-                                setupPieChart(finalC1, finalC2, finalC3);
-                                
-                                View llStatConfidence = requireView().findViewById(R.id.llStatConfidence);
-                                if (reportCount == 0) {
-                                    pieChart.setVisibility(View.GONE);
-                                    if (llStatConfidence != null) llStatConfidence.setVisibility(View.GONE);
+                                // Fetch reports from Firestore
+                                com.google.firebase.firestore.Query reportQuery = firestore.collection("analysis_reports");
+                                if ("patient".equals(user.role)) {
+                                    reportQuery = reportQuery.whereEqualTo("patientEmail", user.email);
                                 } else {
-                                    pieChart.setVisibility(View.VISIBLE);
-                                    if (llStatConfidence != null) llStatConfidence.setVisibility(View.VISIBLE);
+                                    reportQuery = reportQuery.whereEqualTo("doctorEmail", user.email);
                                 }
+                                
+                                reportQuery.get().addOnCompleteListener(reportTask -> {
+                                    int reportCount = 0;
+                                    int c1 = 0, c2 = 0, c3 = 0;
+                                    
+                                    if (reportTask.isSuccessful() && reportTask.getResult() != null) {
+                                        reportCount = reportTask.getResult().size();
+                                        for (com.google.firebase.firestore.DocumentSnapshot doc : reportTask.getResult().getDocuments()) {
+                                            String diagnosis = doc.getString("diagnosis");
+                                            if (diagnosis != null) {
+                                                if (diagnosis.contains("Class I")) c1++;
+                                                else if (diagnosis.contains("Class II")) c2++;
+                                                else if (diagnosis.contains("Class III")) c3++;
+                                            }
+                                        }
+                                    } else {
+                                        // Fallback
+                                        java.util.List<com.classiiiai.app.data.AnalysisReport> localReports = "doctor".equals(user.role) ? 
+                                            db.analysisReportDao().getAllReports() : db.analysisReportDao().getReportsForPatient(user.email);
+                                        reportCount = localReports.size();
+                                        for (com.classiiiai.app.data.AnalysisReport r : localReports) {
+                                            if (r.diagnosis != null) {
+                                                if (r.diagnosis.contains("Class I")) c1++;
+                                                else if (r.diagnosis.contains("Class II")) c2++;
+                                                else if (r.diagnosis.contains("Class III")) c3++;
+                                            }
+                                        }
+                                    }
+                                    
+                                    final int finalPatientCount = patientCount;
+                                    final int finalApptCount = apptCount;
+                                    final int finalReportCount = reportCount;
+                                    final int finalC1 = c1, finalC2 = c2, finalC3 = c3;
+                                    
+                                    if (getActivity() != null) {
+                                        getActivity().runOnUiThread(() -> {
+                                            tvStatPatients.setText(String.valueOf(finalPatientCount));
+                                            tvStatReports.setText(String.valueOf(finalReportCount));
+                                            tvStatAppointments.setText(String.valueOf(finalApptCount));
+                                            
+                                            setupPieChart(finalC1, finalC2, finalC3);
+                                            
+                                            View llStatConfidence = requireView().findViewById(R.id.llStatConfidence);
+                                            if (finalReportCount == 0) {
+                                                pieChart.setVisibility(View.GONE);
+                                                if (llStatConfidence != null) llStatConfidence.setVisibility(View.GONE);
+                                            } else {
+                                                pieChart.setVisibility(View.VISIBLE);
+                                                if (llStatConfidence != null) llStatConfidence.setVisibility(View.VISIBLE);
+                                            }
+                                        });
+                                    }
+                                });
                             });
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(retrofit2.Call<java.util.Map<String, com.classiiiai.app.data.AnalysisReport>> call, Throwable t) {
-                        // Fallback to local DB if offline
-                        java.util.List<com.classiiiai.app.data.AnalysisReport> reports = "doctor".equals(user.role) ? 
-                            db.analysisReportDao().getAllReports() : db.analysisReportDao().getReportsForPatient(user.email);
-                        
-                        int reportCount = reports.size();
-                        int c1 = 0, c2 = 0, c3 = 0;
-                        for (com.classiiiai.app.data.AnalysisReport r : reports) {
-                            if (r.diagnosis != null) {
-                                if (r.diagnosis.contains("Class I")) c1++;
-                                else if (r.diagnosis.contains("Class II")) c2++;
-                                else if (r.diagnosis.contains("Class III")) c3++;
-                            }
-                        }
-                        
-                        final int finalC1 = c1, finalC2 = c2, finalC3 = c3;
-                        
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> {
-                                tvStatPatients.setText(String.valueOf(patientCount));
-                                tvStatReports.setText(String.valueOf(reportCount));
-                                tvStatAppointments.setText(String.valueOf(apptCount));
-                                setupPieChart(finalC1, finalC2, finalC3);
-                            });
-                        }
-                    }
-                });
-                
-
+                    });
             }
         });
     }
