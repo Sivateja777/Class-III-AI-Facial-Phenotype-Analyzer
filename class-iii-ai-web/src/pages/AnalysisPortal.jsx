@@ -108,6 +108,7 @@ const AnalysisPortal = () => {
         severityScore: data.severityScore || 15.0,
         severityCategory: data.severityCategory || 'Mild',
         clinicalReasoning: data.features?.clinical_reasoning || 'No clinical reasoning provided.',
+        treatmentRecommendation: data.features?.treatment_recommendation || '',
         heatmapUrl: data.heatmapUrl || '',
         reportUrl: data.reportUrl || '',
         timestamp: Date.now()
@@ -151,10 +152,16 @@ const AnalysisPortal = () => {
                   Surgical Intervention Highly Likely
                 </div>
               )}
-              {!result.diagnosis.includes('Class I') && (
+              {result.treatmentRecommendation ? (
                 <div style={{ marginTop: '0.5rem', display: 'inline-block', backgroundColor: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '0.5rem 1rem', borderRadius: '4px', fontWeight: 'bold' }}>
-                  Medical Recommendation: Please visit a doctor for further clinical evaluation.
+                  AI Recommendation: {result.treatmentRecommendation}
                 </div>
+              ) : (
+                !result.diagnosis.includes('Class I') && (
+                  <div style={{ marginTop: '0.5rem', display: 'inline-block', backgroundColor: 'rgba(234, 179, 8, 0.2)', color: '#eab308', padding: '0.5rem 1rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                    Medical Recommendation: Please visit a doctor for further clinical evaluation.
+                  </div>
+                )
               )}
               {result.clinicalReasoning && (
                 <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderLeft: '4px solid var(--primary)', borderRadius: '4px' }}>

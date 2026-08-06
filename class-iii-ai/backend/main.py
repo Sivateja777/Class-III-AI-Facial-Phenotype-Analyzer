@@ -115,7 +115,8 @@ async def analyze_image(request: Request, frontal: UploadFile = File(...), later
       "diagnosis": "Class I - Normal" | "Class II - Mandibular Retrognathia" | "Class III - Maxillary Deficiency/Mandibular Prognathia",
       "severityScore": <float between 0 and 100>,
       "severityCategory": "Mild" | "Moderate" | "Severe",
-      "clinical_reasoning": "<detailed clinical reasoning incorporating the exact measurements provided above>"
+      "clinical_reasoning": "<detailed clinical reasoning incorporating the exact measurements provided above>",
+      "treatment_recommendation": "<a personalized AI recommendation for treatment based on the diagnosis and severity>"
     }}
     """
     
@@ -130,13 +131,15 @@ async def analyze_image(request: Request, frontal: UploadFile = File(...), later
         severity_category = result.get("severityCategory", "Mild")
         confidence = 99.0
         
-        # Inject the LLM clinical reasoning into the features payload for the frontend
+        # Inject the LLM clinical reasoning and recommendation into the features payload for the frontend
         features["clinical_reasoning"] = result.get("clinical_reasoning", "")
+        features["treatment_recommendation"] = result.get("treatment_recommendation", "")
         
     except Exception as e:
         print("Gemini API Error:", e)
         # Fallback to local Random Forest model if API fails or parsing fails
         diagnosis, severity_score, confidence, severity_category = pipeline.classify_and_score(features)
+        features["treatment_recommendation"] = "We detected a potential malocclusion that requires professional evaluation. We highly recommend booking an appointment with an orthodontist."
     
     # 3. Explainable AI (Heatmap on lateral profile)
     heatmap_overlay = pipeline.generate_explainable_heatmap(lateral_norm, landmarks, features)

@@ -98,6 +98,7 @@ public class AnalysisResultFragment extends Fragment {
             tvSeverity.setText(String.format("%.1f", severityScore));
         }
         
+        String aiRecommendation = null;
         // Parse advanced features
         try {
             org.json.JSONObject features = new org.json.JSONObject(featuresJson);
@@ -122,6 +123,10 @@ public class AnalysisResultFragment extends Fragment {
                 } else {
                     tvClinicalReasoning.setText("No clinical reasoning provided by AI.");
                 }
+                
+                if (features.has("treatment_recommendation")) {
+                    aiRecommendation = features.getString("treatment_recommendation");
+                }
             } else {
                 tvAngle.setText(String.format("%.1f°", convexityAngle));
                 tvAdvancedFeatures.setText("Advanced metrics unavailable (Local fallback mode)");
@@ -134,21 +139,36 @@ public class AnalysisResultFragment extends Fragment {
         TextView tvRecommendation = view.findViewById(R.id.tvRecommendation);
         Button btnBookAppointment = view.findViewById(R.id.btnBookAppointment);
         
-        if (diagnosis.toLowerCase().contains("class i") || diagnosis.toLowerCase().contains("normal") || severityScore < 40) {
-            tvRecommendation.setText("Your facial profile analysis looks healthy! No doctor appointment is needed at this time.");
-            btnBookAppointment.setVisibility(View.GONE);
-        } else {
-            if ("Severe".equalsIgnoreCase(severityCategory) || severityScore >= 70.0) {
-                tvRecommendation.setText("🚨 SURGICAL INTERVENTION HIGHLY LIKELY 🚨\n\nWe detected a severe malocclusion that requires immediate professional evaluation. Orthognathic surgery may be indicated.");
-                tvRecommendation.setTextColor(android.graphics.Color.RED);
+        if (aiRecommendation != null && !aiRecommendation.isEmpty()) {
+            tvRecommendation.setText("AI Recommendation: " + aiRecommendation);
+            if (diagnosis.toLowerCase().contains("class i") || diagnosis.toLowerCase().contains("normal") || severityScore < 40) {
+                btnBookAppointment.setVisibility(View.GONE);
             } else {
-                tvRecommendation.setText("We detected a potential malocclusion that requires professional evaluation. We highly recommend booking an appointment with an orthodontist.");
+                if ("Severe".equalsIgnoreCase(severityCategory) || severityScore >= 70.0) {
+                    tvRecommendation.setTextColor(android.graphics.Color.RED);
+                }
+                btnBookAppointment.setVisibility(View.VISIBLE);
+                btnBookAppointment.setOnClickListener(v -> {
+                    android.widget.Toast.makeText(requireContext(), "Redirecting to Booking Portal...", android.widget.Toast.LENGTH_SHORT).show();
+                });
             }
-            btnBookAppointment.setVisibility(View.VISIBLE);
-            
-            btnBookAppointment.setOnClickListener(v -> {
-                android.widget.Toast.makeText(requireContext(), "Redirecting to Booking Portal...", android.widget.Toast.LENGTH_SHORT).show();
-            });
+        } else {
+            if (diagnosis.toLowerCase().contains("class i") || diagnosis.toLowerCase().contains("normal") || severityScore < 40) {
+                tvRecommendation.setText("Your facial profile analysis looks healthy! No doctor appointment is needed at this time.");
+                btnBookAppointment.setVisibility(View.GONE);
+            } else {
+                if ("Severe".equalsIgnoreCase(severityCategory) || severityScore >= 70.0) {
+                    tvRecommendation.setText("🚨 SURGICAL INTERVENTION HIGHLY LIKELY 🚨\n\nWe detected a severe malocclusion that requires immediate professional evaluation. Orthognathic surgery may be indicated.");
+                    tvRecommendation.setTextColor(android.graphics.Color.RED);
+                } else {
+                    tvRecommendation.setText("We detected a potential malocclusion that requires professional evaluation. We highly recommend booking an appointment with an orthodontist.");
+                }
+                btnBookAppointment.setVisibility(View.VISIBLE);
+                
+                btnBookAppointment.setOnClickListener(v -> {
+                    android.widget.Toast.makeText(requireContext(), "Redirecting to Booking Portal...", android.widget.Toast.LENGTH_SHORT).show();
+                });
+            }
         }
 
         if (!imageUriString.isEmpty()) {
