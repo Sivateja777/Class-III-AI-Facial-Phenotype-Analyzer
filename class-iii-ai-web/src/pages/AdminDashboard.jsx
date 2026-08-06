@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { Shield, Users, Activity, FileText, Calendar, LogOut } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -15,30 +15,27 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      setStats(prev => ({ ...prev, users: snapshot.size }));
+      setLoading(false);
+    });
+    const unsubPatients = onSnapshot(collection(db, 'patients'), (snapshot) => {
+      setStats(prev => ({ ...prev, patients: snapshot.size }));
+    });
+    const unsubReports = onSnapshot(collection(db, 'analysis_reports'), (snapshot) => {
+      setStats(prev => ({ ...prev, reports: snapshot.size }));
+    });
+    const unsubAppts = onSnapshot(collection(db, 'appointments'), (snapshot) => {
+      setStats(prev => ({ ...prev, appointments: snapshot.size }));
+    });
 
-  const fetchStats = async () => {
-    try {
-      // In a real production app with thousands of documents, you would use Firebase Aggregation queries (e.g., getCountFromServer)
-      // For this exact parity match, we will just count the docs.
-      
-      const usersSnap = await getDocs(collection(db, 'users'));
-      const patientsSnap = await getDocs(collection(db, 'patients'));
-      const reportsSnap = await getDocs(collection(db, 'analysis_reports'));
-      const apptSnap = await getDocs(collection(db, 'appointments'));
-      
-      setStats({
-        users: usersSnap.size,
-        patients: patientsSnap.size,
-        reports: reportsSnap.size,
-        appointments: apptSnap.size
-      });
-    } catch (err) {
-      console.error("Error fetching admin stats:", err);
-    }
-    setLoading(false);
-  };
+    return () => {
+      unsubUsers();
+      unsubPatients();
+      unsubReports();
+      unsubAppts();
+    };
+  }, []);
 
   const handleLogout = () => {
     auth.signOut();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot } from 'firebase/firestore';
 import { ArrowLeft, FileText } from 'lucide-react';
 
 const Reports = () => {
@@ -10,26 +10,23 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchReports();
-  }, []);
-
-  const fetchReports = async () => {
     if (!auth.currentUser) return;
-    try {
-      // Doctor sees all reports
-      const q = query(collection(db, 'analysis_reports'));
-      const querySnapshot = await getDocs(q);
+    
+    const unsubscribe = onSnapshot(query(collection(db, 'analysis_reports')), (snapshot) => {
       const reps = [];
-      querySnapshot.forEach((doc) => {
+      snapshot.forEach((doc) => {
         reps.push({ id: doc.id, ...doc.data() });
       });
       reps.sort((a, b) => b.timestamp - a.timestamp);
       setReports(reps);
-    } catch (err) {
+      setLoading(false);
+    }, (err) => {
       console.error("Error fetching reports:", err);
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="container" style={{ padding: '2rem' }}>

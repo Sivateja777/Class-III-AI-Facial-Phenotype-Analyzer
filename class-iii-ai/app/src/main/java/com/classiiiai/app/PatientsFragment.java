@@ -57,6 +57,8 @@ public class PatientsFragment extends Fragment {
         fabAddPatient.setOnClickListener(v -> showAddPatientDialog());
     }
 
+    private com.google.firebase.firestore.ListenerRegistration patientsListener;
+
     private void loadPatients() {
         executor.execute(() -> {
             AppDatabase db = AppDatabase.getDatabase(requireContext());
@@ -64,13 +66,26 @@ public class PatientsFragment extends Fragment {
             
             if (currentUser != null) {
                 // Fetch from Firestore
-                com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("patients")
+                patientsListener = com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("patients")
                     .whereEqualTo("doctorEmail", currentUser.email)
-                    .get()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful() && task.getResult() != null) {
+                    .addSnapshotListener((snapshot, e) -> {
+                        if (e != null) {
+                            // Fallback to local
+                            executor.execute(() -> {
+                                List<PatientRecord> localPatients = db.patientRecordDao().getPatientsForDoctor(currentUser.email);
+                                if (getActivity() != null) {
+                                    requireActivity().runOnUiThread(() -> {
+                                        adapter.setPatients(localPatients);
+                                        tvEmptyState.setVisibility(localPatients.isEmpty() ? View.VISIBLE : View.GONE);
+                                    });
+                                }
+                            });
+                            return;
+                        }
+                        
+                        if (snapshot != null) {
                             List<PatientRecord> patients = new ArrayList<>();
-                            for (com.google.firebase.firestore.DocumentSnapshot doc : task.getResult().getDocuments()) {
+                            for (com.google.firebase.firestore.DocumentSnapshot doc : snapshot.getDocuments()) {
                                 String name = doc.getString("name");
                                 String age = doc.getString("age");
                                 String gender = doc.getString("gender");
@@ -87,24 +102,23 @@ public class PatientsFragment extends Fragment {
                                 }
                             }
                             
-                            requireActivity().runOnUiThread(() -> {
-                                adapter.setPatients(patients);
-                                tvEmptyState.setVisibility(patients.isEmpty() ? View.VISIBLE : View.GONE);
-                            });
-                            
-                        } else {
-                            // Fallback to local
-                            executor.execute(() -> {
-                                List<PatientRecord> localPatients = db.patientRecordDao().getPatientsForDoctor(currentUser.email);
+                            if (getActivity() != null) {
                                 requireActivity().runOnUiThread(() -> {
-                                    adapter.setPatients(localPatients);
-                                    tvEmptyState.setVisibility(localPatients.isEmpty() ? View.VISIBLE : View.GONE);
+                                    adapter.setPatients(patients);
+                                    tvEmptyState.setVisibility(patients.isEmpty() ? View.VISIBLE : View.GONE);
                                 });
-                            });
+                            }
                         }
                     });
             }
         });
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (patientsListener != null) patientsListener.remove();
+        if (executor != null) executor.shutdown();
     }
 
     private void showAddPatientDialog() {

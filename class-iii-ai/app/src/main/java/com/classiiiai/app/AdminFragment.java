@@ -44,44 +44,67 @@ public class AdminFragment extends Fragment {
         loadStats();
     }
 
+    private com.google.firebase.firestore.ListenerRegistration usersListener;
+    private com.google.firebase.firestore.ListenerRegistration patientsListener;
+    private com.google.firebase.firestore.ListenerRegistration reportsListener;
+    private com.google.firebase.firestore.ListenerRegistration apptsListener;
+
     private void loadStats() {
         // Fetch all counts directly from Firestore for real-time parity with Web App
         
         // Users
-        mFirestore.collection("users").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null && getActivity() != null) {
-                tvTotalUsers.setText(String.valueOf(task.getResult().size()));
-            } else {
+        usersListener = mFirestore.collection("users").addSnapshotListener((snapshot, e) -> {
+            if (e != null) {
                 fallbackLoadUsers();
+                return;
+            }
+            if (snapshot != null && getActivity() != null) {
+                tvTotalUsers.setText(String.valueOf(snapshot.size()));
             }
         });
         
         // Patients
-        mFirestore.collection("patients").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null && getActivity() != null) {
-                tvTotalPatients.setText(String.valueOf(task.getResult().size()));
-            } else {
+        patientsListener = mFirestore.collection("patients").addSnapshotListener((snapshot, e) -> {
+            if (e != null) {
                 fallbackLoadPatients();
+                return;
+            }
+            if (snapshot != null && getActivity() != null) {
+                tvTotalPatients.setText(String.valueOf(snapshot.size()));
             }
         });
         
         // Reports
-        mFirestore.collection("analysis_reports").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null && getActivity() != null) {
-                tvTotalAnalyses.setText(String.valueOf(task.getResult().size()));
-            } else {
+        reportsListener = mFirestore.collection("analysis_reports").addSnapshotListener((snapshot, e) -> {
+            if (e != null) {
                 fallbackLoadReports();
+                return;
+            }
+            if (snapshot != null && getActivity() != null) {
+                tvTotalAnalyses.setText(String.valueOf(snapshot.size()));
             }
         });
         
         // Appointments
-        mFirestore.collection("appointments").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null && getActivity() != null) {
-                tvTotalAppointments.setText(String.valueOf(task.getResult().size()));
-            } else {
+        apptsListener = mFirestore.collection("appointments").addSnapshotListener((snapshot, e) -> {
+            if (e != null) {
                 fallbackLoadAppointments();
+                return;
+            }
+            if (snapshot != null && getActivity() != null) {
+                tvTotalAppointments.setText(String.valueOf(snapshot.size()));
             }
         });
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (usersListener != null) usersListener.remove();
+        if (patientsListener != null) patientsListener.remove();
+        if (reportsListener != null) reportsListener.remove();
+        if (apptsListener != null) apptsListener.remove();
+        if (executor != null) executor.shutdown();
     }
 
     private void fallbackLoadUsers() {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc } from 'firebase/firestore';
 import { ArrowLeft, Calendar, Plus } from 'lucide-react';
 
 const PatientVisits = ({ isDoctorView }) => {
@@ -18,25 +18,26 @@ const PatientVisits = ({ isDoctorView }) => {
   const targetEmail = isDoctorView ? patientEmailFromUrl : auth.currentUser?.email;
 
   useEffect(() => {
-    fetchVisits();
-  }, [targetEmail]);
-
-  const fetchVisits = async () => {
-    if (!targetEmail) return;
-    try {
-      const q = query(collection(db, 'visits'), where('patientEmail', '==', targetEmail));
-      const querySnapshot = await getDocs(q);
+    if (!targetEmail) {
+      setLoading(false);
+      return;
+    }
+    const q = query(collection(db, 'visits'), where('patientEmail', '==', targetEmail));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedVisits = [];
-      querySnapshot.forEach((doc) => {
+      snapshot.forEach((doc) => {
         fetchedVisits.push({ id: doc.id, ...doc.data() });
       });
       fetchedVisits.sort((a, b) => b.timestamp - a.timestamp);
       setVisits(fetchedVisits);
-    } catch (err) {
+      setLoading(false);
+    }, (err) => {
       console.error(err);
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [targetEmail]);
 
   const handleAddVisit = async (e) => {
     e.preventDefault();
@@ -49,9 +50,8 @@ const PatientVisits = ({ isDoctorView }) => {
         notes: notes,
         timestamp: Date.now()
       });
-      setShowModal(false);
       setNotes('');
-      fetchVisits();
+      setShowModal(false);
     } catch (err) {
       console.error('Error adding visit', err);
     }

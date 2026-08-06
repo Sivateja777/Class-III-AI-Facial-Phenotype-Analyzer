@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc } from 'firebase/firestore';
 import { Plus, Activity, FileText, LogOut, Users, Calendar } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
@@ -32,50 +32,42 @@ const DoctorDashboard = () => {
   });
   
   useEffect(() => {
-    fetchPatients();
-  }, []);
-
-  const fetchPatients = async () => {
     if (!auth.currentUser) return;
-    try {
-      const q = query(collection(db, 'patients'), where('doctorEmail', '==', auth.currentUser.email));
-      const querySnapshot = await getDocs(q);
+
+    const unsubPatients = onSnapshot(query(collection(db, 'patients'), where('doctorEmail', '==', auth.currentUser.email)), (snapshot) => {
       const pts = [];
-      querySnapshot.forEach((doc) => {
-        pts.push({ id: doc.id, ...doc.data() });
-      });
+      snapshot.forEach((doc) => pts.push({ id: doc.id, ...doc.data() }));
       setPatients(pts);
+      setStats(prev => ({ ...prev, patientCount: pts.length }));
+    });
 
-      // Fetch appointments
-      const apptQ = query(collection(db, 'appointments'), where('doctorEmail', '==', auth.currentUser.email));
-      const apptSnap = await getDocs(apptQ);
-      const apptCount = apptSnap.size;
+    const unsubAppts = onSnapshot(query(collection(db, 'appointments'), where('doctorEmail', '==', auth.currentUser.email)), (snapshot) => {
+      setStats(prev => ({ ...prev, apptCount: snapshot.size }));
+    });
 
-      // Fetch reports for analytics
-      const repQ = query(collection(db, 'analysis_reports'), where('doctorEmail', '==', auth.currentUser.email));
-      const repSnap = await getDocs(repQ);
-      
+    const unsubReports = onSnapshot(query(collection(db, 'analysis_reports'), where('doctorEmail', '==', auth.currentUser.email)), (snapshot) => {
       let c1 = 0, c2 = 0, c3 = 0;
-      repSnap.forEach(doc => {
+      snapshot.forEach(doc => {
         const diag = doc.data().diagnosis || '';
         if (diag.includes('Class I')) c1++;
         else if (diag.includes('Class II')) c2++;
         else if (diag.includes('Class III')) c3++;
       });
-
-      setStats({
-        patientCount: pts.length,
-        reportCount: repSnap.size,
-        apptCount: apptCount,
+      setStats(prev => ({
+        ...prev,
+        reportCount: snapshot.size,
         classI: c1,
         classII: c2,
         classIII: c3
-      });
+      }));
+    });
 
-    } catch (err) {
-      console.error("Error fetching stats:", err);
-    }
-  };
+    return () => {
+      unsubPatients();
+      unsubAppts();
+      unsubReports();
+    };
+  }, []);
 
   const handleLogout = () => {
     auth.signOut();
@@ -97,7 +89,7 @@ const DoctorDashboard = () => {
         timestamp: Date.now()
       });
       setShowModal(false);
-      fetchPatients();
+      // Removed fetchPatients() as onSnapshot handles updates
       setName(''); setEmail(''); setAge(''); setGender('');
       setEthnicity(''); setGrowthStatus('Adult'); setClinicalDiagnosis(''); setCephValues('');
     } catch (err) {

@@ -114,6 +114,10 @@ public class HomeFragment extends Fragment {
         pieChart.invalidate(); // refresh
     }
 
+    private com.google.firebase.firestore.ListenerRegistration patientListener;
+    private com.google.firebase.firestore.ListenerRegistration apptListener;
+    private com.google.firebase.firestore.ListenerRegistration reportListener;
+
     private void loadDashboardStats() {
         executor.execute(() -> {
             AppDatabase db = AppDatabase.getDatabase(requireContext());
@@ -122,86 +126,75 @@ public class HomeFragment extends Fragment {
             if (user != null) {
                 com.google.firebase.firestore.FirebaseFirestore firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance();
                 
-                // Fetch patients from Firestore
-                firestore.collection("patients")
+                // Real-time listener for patients
+                patientListener = firestore.collection("patients")
                     .whereEqualTo("doctorEmail", user.email)
-                    .get()
-                    .addOnCompleteListener(task -> {
-                        int patientCount = (task.isSuccessful() && task.getResult() != null) ? task.getResult().size() : db.patientRecordDao().getPatientCountForDoctor(user.email);
-                        
-                        // Fetch appointments from Firestore
-                        com.google.firebase.firestore.Query apptQuery = firestore.collection("appointments");
-                        if ("patient".equals(user.role)) {
-                            apptQuery = apptQuery.whereEqualTo("patientEmail", user.email);
-                        } else {
-                            apptQuery = apptQuery.whereEqualTo("doctorEmail", user.email);
+                    .addSnapshotListener((snapshot, e) -> {
+                        if (e != null) return;
+                        if (snapshot != null) {
+                            int patientCount = snapshot.size();
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> tvStatPatients.setText(String.valueOf(patientCount)));
+                            }
+                        }
+                    });
+
+                // Real-time listener for appointments
+                com.google.firebase.firestore.Query apptQuery = firestore.collection("appointments");
+                if ("patient".equals(user.role)) {
+                    apptQuery = apptQuery.whereEqualTo("patientEmail", user.email);
+                } else {
+                    apptQuery = apptQuery.whereEqualTo("doctorEmail", user.email);
+                }
+                apptListener = apptQuery.addSnapshotListener((snapshot, e) -> {
+                    if (e != null) return;
+                    if (snapshot != null) {
+                        int apptCount = snapshot.size();
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> tvStatAppointments.setText(String.valueOf(apptCount)));
+                        }
+                    }
+                });
+
+                // Real-time listener for reports
+                com.google.firebase.firestore.Query reportQuery = firestore.collection("analysis_reports");
+                if ("patient".equals(user.role)) {
+                    reportQuery = reportQuery.whereEqualTo("patientEmail", user.email);
+                } else {
+                    reportQuery = reportQuery.whereEqualTo("doctorEmail", user.email);
+                }
+                reportListener = reportQuery.addSnapshotListener((snapshot, e) -> {
+                    if (e != null) return;
+                    if (snapshot != null) {
+                        int reportCount = snapshot.size();
+                        int c1 = 0, c2 = 0, c3 = 0;
+                        for (com.google.firebase.firestore.DocumentSnapshot doc : snapshot.getDocuments()) {
+                            String diagnosis = doc.getString("diagnosis");
+                            if (diagnosis != null) {
+                                if (diagnosis.contains("Class I")) c1++;
+                                else if (diagnosis.contains("Class II")) c2++;
+                                else if (diagnosis.contains("Class III")) c3++;
+                            }
                         }
                         
-                        apptQuery.get().addOnCompleteListener(apptTask -> {
-                                int apptCount = (apptTask.isSuccessful() && apptTask.getResult() != null) ? apptTask.getResult().size() : db.appointmentDao().getAppointmentsForUser(user.email).size();
+                        final int finalC1 = c1, finalC2 = c2, finalC3 = c3;
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                tvStatReports.setText(String.valueOf(reportCount));
+                                setupPieChart(finalC1, finalC2, finalC3);
                                 
-                                // Fetch reports from Firestore
-                                com.google.firebase.firestore.Query reportQuery = firestore.collection("analysis_reports");
-                                if ("patient".equals(user.role)) {
-                                    reportQuery = reportQuery.whereEqualTo("patientEmail", user.email);
+                                View llStatConfidence = requireView().findViewById(R.id.llStatConfidence);
+                                if (reportCount == 0) {
+                                    pieChart.setVisibility(View.GONE);
+                                    if (llStatConfidence != null) llStatConfidence.setVisibility(View.GONE);
                                 } else {
-                                    reportQuery = reportQuery.whereEqualTo("doctorEmail", user.email);
+                                    pieChart.setVisibility(View.VISIBLE);
+                                    if (llStatConfidence != null) llStatConfidence.setVisibility(View.VISIBLE);
                                 }
-                                
-                                reportQuery.get().addOnCompleteListener(reportTask -> {
-                                    int reportCount = 0;
-                                    int c1 = 0, c2 = 0, c3 = 0;
-                                    
-                                    if (reportTask.isSuccessful() && reportTask.getResult() != null) {
-                                        reportCount = reportTask.getResult().size();
-                                        for (com.google.firebase.firestore.DocumentSnapshot doc : reportTask.getResult().getDocuments()) {
-                                            String diagnosis = doc.getString("diagnosis");
-                                            if (diagnosis != null) {
-                                                if (diagnosis.contains("Class I")) c1++;
-                                                else if (diagnosis.contains("Class II")) c2++;
-                                                else if (diagnosis.contains("Class III")) c3++;
-                                            }
-                                        }
-                                    } else {
-                                        // Fallback
-                                        java.util.List<com.classiiiai.app.data.AnalysisReport> localReports = "doctor".equals(user.role) ? 
-                                            db.analysisReportDao().getAllReports() : db.analysisReportDao().getReportsForPatient(user.email);
-                                        reportCount = localReports.size();
-                                        for (com.classiiiai.app.data.AnalysisReport r : localReports) {
-                                            if (r.diagnosis != null) {
-                                                if (r.diagnosis.contains("Class I")) c1++;
-                                                else if (r.diagnosis.contains("Class II")) c2++;
-                                                else if (r.diagnosis.contains("Class III")) c3++;
-                                            }
-                                        }
-                                    }
-                                    
-                                    final int finalPatientCount = patientCount;
-                                    final int finalApptCount = apptCount;
-                                    final int finalReportCount = reportCount;
-                                    final int finalC1 = c1, finalC2 = c2, finalC3 = c3;
-                                    
-                                    if (getActivity() != null) {
-                                        getActivity().runOnUiThread(() -> {
-                                            tvStatPatients.setText(String.valueOf(finalPatientCount));
-                                            tvStatReports.setText(String.valueOf(finalReportCount));
-                                            tvStatAppointments.setText(String.valueOf(finalApptCount));
-                                            
-                                            setupPieChart(finalC1, finalC2, finalC3);
-                                            
-                                            View llStatConfidence = requireView().findViewById(R.id.llStatConfidence);
-                                            if (finalReportCount == 0) {
-                                                pieChart.setVisibility(View.GONE);
-                                                if (llStatConfidence != null) llStatConfidence.setVisibility(View.GONE);
-                                            } else {
-                                                pieChart.setVisibility(View.VISIBLE);
-                                                if (llStatConfidence != null) llStatConfidence.setVisibility(View.VISIBLE);
-                                            }
-                                        });
-                                    }
-                                });
                             });
-                    });
+                        }
+                    }
+                });
             }
         });
     }
@@ -209,6 +202,9 @@ public class HomeFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (patientListener != null) patientListener.remove();
+        if (apptListener != null) apptListener.remove();
+        if (reportListener != null) reportListener.remove();
         if (executor != null) executor.shutdown();
     }
 }
